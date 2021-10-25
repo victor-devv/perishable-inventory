@@ -4,5 +4,10 @@ export interface CreatePerishableDTO {
     expiry: number;
 }
 
+export interface SellPerishableDTO {
+    name: string;
+    quantity: number;
+}
+
 
 // export type PerishableInput = Omit<CreatePerishableDTO, 'id'>;

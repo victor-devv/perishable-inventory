@@ -22,9 +22,25 @@ class PerishablesController {
         }
         const result = await PerishablesService.create(resource);
         //.json(result)
-        res.status(200).json({status: "success"})
+        res.status(200).json({status: "success", message: "Item added successfully"})
 
     };
+
+    async sellItem (req: Request, res: Response, next: NextFunction) {
+        const name = req.params.item;
+        const {quantity} = req.body
+
+        const resource = {
+            name: name,
+            quantity: quantity,
+        }
+        
+        const result = await PerishablesService.sell(resource);
+        //.json(result)
+        res.status(200).json(result)
+
+    }
+
 }
 
 export default new PerishablesController();

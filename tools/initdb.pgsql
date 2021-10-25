@@ -1,5 +1,6 @@
 -- Drops perishables table
-DROP TABLE IF EXISTS perishables;
+DROP TABLE IF EXISTS Perishables;
+DROP TABLE IF EXISTS Stocks;
 
 -- Creates perishables table
 CREATE TABLE IF NOT EXISTS perishables (

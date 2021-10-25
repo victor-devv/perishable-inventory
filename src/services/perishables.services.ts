@@ -1,6 +1,6 @@
 import PerishablesDAO from '../dao/perishables.dao';
 import { CRUD } from '../interfaces/crud.interface';
-import { CreatePerishableDTO } from '../dto/perishables.dto'
+import { CreatePerishableDTO, SellPerishableDTO } from '../dto/perishables.dto'
 
 // 
 class PerishablesService implements CRUD {
@@ -15,8 +15,12 @@ class PerishablesService implements CRUD {
         return PerishablesDAO.addItem(resource);
     }
 
-    async sell(name: string) {
-        
+    async sell(resource: SellPerishableDTO) {
+        return PerishablesDAO.sellItem(resource);
+    }
+
+    async deleteExpiredStock() {
+        return PerishablesDAO.deleteExpiredStocks()
     }
 
 }

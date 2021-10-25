@@ -11,6 +11,10 @@ import {IndexRoutes} from './routes/index.routes';
 import {UsersRoutes} from './routes/user.routes';
 import {PerishablesRoutes} from './routes/perishables.routes';
 
+//cron
+import RemoveExpiredCRON from './crontab/remove-expired.crontab'
+const cron = new RemoveExpiredCRON();
+
 const port = config.get<number>('port')
 const app = express()
 app.use(express.json());

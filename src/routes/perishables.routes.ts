@@ -15,9 +15,7 @@ export class PerishablesRoutes extends CommonRoutesConfig {
 
         this.app
             .route(`/:item/sell`)
-            .post((req: Request, res: Response) => {
-                res.status(200).send(`Post to sell item ${req.params.item}`);
-            });
+            .post(PerishablesController.sellItem);
 
         this.app
             .route(`/:item/quantity`)
