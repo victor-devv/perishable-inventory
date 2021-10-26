@@ -3,7 +3,9 @@ import Perishable from '../models/perishable.model'
 import Stock from '../models/stock.model';
 import { CreatePerishableDTO, SellPerishableDTO } from '../dto/perishables.dto';
 import database from '../utils/connect'
-import { object } from '../../node_modules/zod/lib';
+import config from 'config'
+import { spawn, Thread, Worker } from "threads"
+import { Stocks } from "../workers/thread-functions"
 
 class PerishablesDAO {
 
@@ -31,20 +33,6 @@ class PerishablesDAO {
             }]
         });
 
-        // const filter = (obj: any) => 
-        //     Object.assign(...Object.keys(obj)
-        //                     .filter( key => predicate(obj[key]) )
-        //                     .map( key => ({ [key]: obj[key] }) ) );
-
-        // // Example use:
-        // var scores = {
-        //     John: 2, Sarah: 3, Janet: 1
-        // };
-        // var filtered = Object.filter(scores, score => score > 1); 
-        // console.log(filtered);
-
-        // const filteredByKey = Object.fromEntries(
-        //     Object.entries(romNumbers).filter(([key, value]) => key === 'I') )
         return item ? item.stocks : null
     }
 
@@ -123,50 +111,62 @@ class PerishablesDAO {
                 const stocks: [] = await this.getItemStock(id)
 
                 if (quantityLeftToSell > 0) {
+                    let result = null
+                    let workerPool = null
+                    const workerPoolEnabled = config.get<number>('WORKER_POOL_ENABLED')
 
-                    stocks.forEach(async (stock) => {
-                        if (stock['dataValues']['quantity'] < quantityLeftToSell) {
+                    if (workerPoolEnabled === 1) {
+                        const stocksWorker = await spawn<Stocks>(new Worker("../workers/thread-functions"))
 
-                            if (quantityLeftToSell > 0) {
-                                quantityLeftToSell -= stock['dataValues']['quantity']
+                        result = await stocksWorker.sell(stocks, saleQuantity, quantityLeftToSell)
 
-                                await Stock.destroy({
-                                    where: {
-                                        id: stock['dataValues']['id']
-                                    }
-                                })
+                    } else {
+
+                        stocks.forEach(async (stock) => {
+                            if (stock['dataValues']['quantity'] < quantityLeftToSell) {
+
+                                if (quantityLeftToSell > 0) {
+                                    quantityLeftToSell -= stock['dataValues']['quantity']
+
+                                    await Stock.destroy({
+                                        where: {
+                                            id: stock['dataValues']['id']
+                                        }
+                                    })
+                                }
+
+                            } else if (stock['dataValues']['quantity'] == quantityLeftToSell) {
+
+                                if (quantityLeftToSell > 0) {
+                                    quantityLeftToSell -= stock['dataValues']['quantity']
+
+                                    await Stock.destroy({
+                                        where: {
+                                            id: stock['dataValues']['id']
+                                        }
+                                    })
+                                    
+                                }
+
+                            } else if (stock['dataValues']['quantity'] > quantityLeftToSell) {
+
+                                if (quantityLeftToSell > 0) {
+                                    let stockquantityLeft = stock['dataValues']['quantity'] - quantityLeftToSell
+                                    quantityLeftToSell -= quantityLeftToSell
+
+                                    await Stock.update({ quantity: stockquantityLeft }, {
+                                        where: {
+                                            id: stock['dataValues']['id']
+                                        }
+                                    });
+                                }
+
                             }
+                        });
 
-                        } else if (stock['dataValues']['quantity'] == quantityLeftToSell) {
-
-                            if (quantityLeftToSell > 0) {
-                                quantityLeftToSell -= stock['dataValues']['quantity']
-
-                                await Stock.destroy({
-                                    where: {
-                                        id: stock['dataValues']['id']
-                                    }
-                                })
-                                
-                            }
-
-                        } else if (stock['dataValues']['quantity'] > quantityLeftToSell) {
-
-                            if (quantityLeftToSell > 0) {
-                                let stockquantityLeft = stock['dataValues']['quantity'] - quantityLeftToSell
-                                quantityLeftToSell -= quantityLeftToSell
-
-                                await Stock.update({ quantity: stockquantityLeft }, {
-                                    where: {
-                                        id: stock['dataValues']['id']
-                                    }
-                                });
-                            }
-
-                        }
-                    });
-
+                    }
                 }
+                
                 return {status: "success", message: "Item sold successfully"}
 
             } else {
