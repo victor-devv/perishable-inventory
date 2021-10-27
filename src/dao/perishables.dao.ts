@@ -7,7 +7,7 @@ import config from 'config'
 import { spawn, Thread, Worker } from "threads"
 import { Stocks } from "../workers/thread-functions"
 
-class PerishablesDAO {
+export class PerishablesDAO {
 
     async getItemId(name: string) {
         const item: any = await Perishable.findOne<any> ({
@@ -186,7 +186,7 @@ class PerishablesDAO {
             },
             force: true
         })
-
+        return true
     }
 
 }

@@ -14,7 +14,6 @@ const numCPUs = cpus().length;
 // import * as routes from "./routes/common"
 import {CommonRoutesConfig} from './routes/common.routes';
 import {IndexRoutes} from './routes/index.routes';
-import {UsersRoutes} from './routes/user.routes';
 import {PerishablesRoutes} from './routes/perishables.routes';
 
 //cron
@@ -27,8 +26,8 @@ if (cluster.isMaster) {
     for (let i = 0; i < numCPUs; i++) {
         cluster.fork();
     }
-    
-    cluster.on('online', function(worker) {
+
+    cluster.on('online', (worker) => {
         console.log(`Worker ${process.pid} is online`);
     });
 
@@ -48,7 +47,6 @@ if (cluster.isMaster) {
 
     const routes: Array<CommonRoutesConfig> = [];
     routes.push(new IndexRoutes(app));
-    routes.push(new UsersRoutes(app));
     routes.push(new PerishablesRoutes(app));
 
     const client  = redis.createClient();

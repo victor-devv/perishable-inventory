@@ -2,3 +2,6 @@ node_modules/
 node_modules/cookie/README.md
 config/
 database/
+src/**/*.js
+src/**/*.map
+coverage
