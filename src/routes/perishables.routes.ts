@@ -1,5 +1,6 @@
 import {Express, Request, Response, NextFunction} from 'express'
 import {CommonRoutesConfig} from './common.routes';
+import PerishablesMiddleware from '../middleware/perishables.middleware';
 import PerishablesController from '../controllers/perishables.controller'
 
 export class PerishablesRoutes extends CommonRoutesConfig {
@@ -11,11 +12,17 @@ export class PerishablesRoutes extends CommonRoutesConfig {
 
         this.app
             .route(`/:item/add`)
-            .post(PerishablesController.addItem);
+            .post(
+                PerishablesMiddleware.validateRequiredAddItemBodyFields,
+                PerishablesController.addItem
+            );
 
         this.app
             .route(`/:item/sell`)
-            .post(PerishablesController.sellItem);
+            .post(
+                PerishablesMiddleware.validateRequiredSellItemBodyFields,
+                PerishablesController.sellItem
+            );
 
         this.app
             .route(`/:item/quantity`)

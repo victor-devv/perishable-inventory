@@ -2,14 +2,9 @@ import express from 'express'
 import config from 'config'
 import logger from './utils/logger'
 import cors from 'cors';
+import compression from "compression";
 import session from 'express-session'
 import redis from "redis";
-import cluster from 'cluster';
-import http from 'http';
-import { cpus } from 'os';
-import process from 'process';
-
-const numCPUs = cpus().length;
 
 // import * as routes from "./routes/common"
 import {CommonRoutesConfig} from './routes/common.routes';
@@ -19,63 +14,37 @@ import {PerishablesRoutes} from './routes/perishables.routes';
 //cron
 import RemoveExpiredCRON from './crontab/remove-expired.crontab'
 
-if (cluster.isMaster) {
-    console.log(`Primary ${process.pid} is running`);
+const port = config.get<number>('port')
+const app = express()
+app.use(express.json());
+app.use(cors()) //configure for security on prod
+app.use(compression())
 
-    // Fork workers.
-    for (let i = 0; i < numCPUs; i++) {
-        cluster.fork();
-    }
+const routes: Array<CommonRoutesConfig> = [];
+routes.push(new IndexRoutes(app));
+routes.push(new PerishablesRoutes(app));
 
-    cluster.on('online', (worker) => {
-        console.log(`Worker ${process.pid} is online`);
+const client  = redis.createClient();
+const redisStore = require('connect-redis')(session);
+app.use(session({
+    secret: 'keyboard cat',
+    // create new redis store.
+    store: new redisStore({ host: 'localhost', port: 6379, client: client,ttl : 260}),
+    saveUninitialized: false,
+    resave: false
+}));
+
+// Start Server
+app.listen(port, async () => {
+    logger.info(`App is running at http://localhost:${port}`)
+
+    // await connect();
+
+    routes.forEach((route: CommonRoutesConfig) => {
+        logger.info(`Routes configured for ${route.getName()}`);
     });
+})
 
-    cluster.on('exit', (worker, code, signal) => {
-        console.log(`worker ${worker.process.pid} died`);
+// start remove expired items cron
+const cron = new RemoveExpiredCRON();
 
-        cluster.fork();
-    });
-
-} else {
-
-    const cron = new RemoveExpiredCRON();
-
-    const port = config.get<number>('port')
-    const app = express()
-    app.use(express.json());
-
-    const routes: Array<CommonRoutesConfig> = [];
-    routes.push(new IndexRoutes(app));
-    routes.push(new PerishablesRoutes(app));
-
-    const client  = redis.createClient();
-    const redisStore = require('connect-redis')(session);
-    app.use(session({
-        secret: 'keyboard cat',
-        // create new redis store.
-        store: new redisStore({ host: 'localhost', port: 6379, client: client,ttl : 260}),
-        saveUninitialized: false,
-        resave: false
-    }));
-
-    // (async () => {
-    //     // Init Worker Pool
-    //     const workerPoolEnabled = config.get<number>('WORKER_POOL_ENABLED')
-
-    //     if (workerPoolEnabled === 1) {
-
-    //     }
-
-        // Start Server
-        app.listen(port, async () => {
-            logger.info(`App is running at http://localhost:${port}`)
-
-            // await connect();
-
-            routes.forEach((route: CommonRoutesConfig) => {
-                logger.info(`Routes configured for ${route.getName()}`);
-            });
-        })
-    // })()
-}
