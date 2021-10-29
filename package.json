@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "npx pm2 start pm2.yaml",
+    "start": "pm2 start pm2.yaml yarn --interpreter bash --name api -- start",
     "prod": "tsc && node build/app.js",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "initdb": "ts-node tools/initdb",
